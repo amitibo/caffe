@@ -427,6 +427,7 @@ message ConvolutionParameter {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
+    SIMPLE = 3;
   }
   optional Engine engine = 15 [default = DEFAULT];
 }

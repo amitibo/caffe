@@ -24,6 +24,8 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
   }
   if (engine == ConvolutionParameter_Engine_CAFFE) {
     return shared_ptr<Layer<Dtype> >(new ConvolutionLayer<Dtype>(param));
+  } else if (engine == ConvolutionParameter_Engine_SIMPLE) {
+    return shared_ptr<Layer<Dtype> >(new SimpleConvolutionLayer<Dtype>(param));
 #ifdef USE_CUDNN
   } else if (engine == ConvolutionParameter_Engine_CUDNN) {
     return shared_ptr<Layer<Dtype> >(new CuDNNConvolutionLayer<Dtype>(param));
