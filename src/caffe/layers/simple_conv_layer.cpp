@@ -75,9 +75,9 @@ void SimpleConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(ConvolutionLayer);
+STUB_GPU(SimpleConvolutionLayer);
 #endif
 
-INSTANTIATE_CLASS(ConvolutionLayer);
+INSTANTIATE_CLASS(SimpleConvolutionLayer);
 
 }  // namespace caffe
