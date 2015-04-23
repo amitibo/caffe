@@ -25,9 +25,21 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
   //
   // Apply the weights
   //
+  int top_size = this->num_ * this->num_output_ * this->height_out_ * this->width_out_;
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
+
+    LOG(INFO) << "Clearing data: " << i;
+
+    //
+    // Clear the top
+    //
+    for (int ind = 0; ind < top_size; ++ind) {
+      top_data[ind]=0;
+    }
+
+    LOG(INFO) << "Applying weights to data: " << i;
 
     for (int n = 0; n < this->num_; n++) {
       int o_g = this->num_output_ / this->group_;
@@ -37,8 +49,8 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
         int k_head = k_g * g;
         for (int o = 0; o < o_g; o++) {
           for (int k = 0; k < k_g; k++) {
-            for (int y = 0; y < top[i]->height(); y++) {
-              for (int x = 0; x < top[i]->width(); x++) {
+            for (int y = 0; y < this->height_out_; y++) {
+              for (int x = 0; x < this->width_out_; x++) {
                 for (int p = 0; p < this->kernel_h_; p++) {
                   for (int q = 0; q < this->kernel_w_; q++) {
                     int in_y = y * this->stride_h_ - this->pad_h_ + p;
@@ -57,15 +69,17 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
         }
       }
     }
-  
+
     //
     // Add the bias
     //
     if (this->bias_term_) {
+      LOG(INFO) << "Applying bias to data: " << i;
+
       for (int n = 0; n < this->num_; n++) {
         for (int o = 0; o < this->num_output_; o++) {
-          for (int y = 0; y < top[i]->height(); y++) {
-            for (int x = 0; x < top[i]->width(); x++) {
+          for (int y = 0; y < this->height_out_; y++) {
+            for (int x = 0; x < this->width_out_; x++) {
               top_data[top[i]->offset(n, o, y, x)] += bias_data[o];
             }
           }
