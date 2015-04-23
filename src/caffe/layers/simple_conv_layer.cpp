@@ -30,17 +30,17 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
     Dtype* top_data = top[i]->mutable_cpu_data();
 
     for (int n = 0; n < this->num_; n++) {
-      int o_g = this->channels_ / this->group_;
-      int k_g = bottom[i]->channels_ / this->group_;
-      for (int g = 0; g < groups; g++) {
+      int o_g = this->num_output_ / this->group_;
+      int k_g = this->channels_ / this->group_;
+      for (int g = 0; g < this->group_; g++) {
         int o_head = o_g * g;
         int k_head = k_g * g;
         for (int o = 0; o < o_g; o++) {
           for (int k = 0; k < k_g; k++) {
             for (int y = 0; y < top[i]->height(); y++) {
               for (int x = 0; x < top[i]->width(); x++) {
-                for (int p = 0; p < kernel_h; p++) {
-                  for (int q = 0; q < kernel_w; q++) {
+                for (int p = 0; p < this->kernel_h_; p++) {
+                  for (int q = 0; q < this->kernel_w_; q++) {
                     int in_y = y * this->stride_h_ - this->pad_h_ + p;
                     int in_x = x * this->stride_w_ - this->pad_w_ + q;
                     if (in_y >= 0 && in_y < this->height_
@@ -61,9 +61,9 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
     //
     // Add the bias
     //
-    if (this->bias_term()) {
-      for (int n = 0; n < top[i]->num(); n++) {
-        for (int o = 0; o < top[i]->channels_; o++) {
+    if (this->bias_term_) {
+      for (int n = 0; n < this->num_; n++) {
+        for (int o = 0; o < this->num_output_; o++) {
           for (int y = 0; y < top[i]->height(); y++) {
             for (int x = 0; x < top[i]->width(); x++) {
               top_data[top[i]->offset(n, o, y, x)] += bias_data[o];
