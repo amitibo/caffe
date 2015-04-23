@@ -19,16 +19,57 @@ void SimpleConvolutionLayer<Dtype>::compute_output_shape() {
 template <typename Dtype>
 void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  const Dtype* weight = this->blobs_[0]->cpu_data();
+  const Dtype* weight_data = this->blobs_[0]->cpu_data();
+  const Dtype* bias_data = this->blobs_[1]->cpu_data();
+
+  //
+  // Apply the weights
+  //
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
-    for (int n = 0; n < this->num_; ++n) {
-      this->forward_cpu_gemm(bottom_data + bottom[i]->offset(n), weight,
-          top_data + top[i]->offset(n));
-      if (this->bias_term_) {
-        const Dtype* bias = this->blobs_[1]->cpu_data();
-        this->forward_cpu_bias(top_data + top[i]->offset(n), bias);
+
+    for (int n = 0; n < this->num_; n++) {
+      int o_g = this->channels_ / this->group_;
+      int k_g = bottom[i]->channels_ / this->group_;
+      for (int g = 0; g < groups; g++) {
+        int o_head = o_g * g;
+        int k_head = k_g * g;
+        for (int o = 0; o < o_g; o++) {
+          for (int k = 0; k < k_g; k++) {
+            for (int y = 0; y < top[i]->height(); y++) {
+              for (int x = 0; x < top[i]->width(); x++) {
+                for (int p = 0; p < kernel_h; p++) {
+                  for (int q = 0; q < kernel_w; q++) {
+                    int in_y = y * this->stride_h_ - this->pad_h_ + p;
+                    int in_x = x * this->stride_w_ - this->pad_w_ + q;
+                    if (in_y >= 0 && in_y < this->height_
+                      && in_x >= 0 && in_x < this->width_) {
+                      top_data[top[i]->offset(n, o + o_head, y, x)] +=
+                          bottom_data[bottom[i]->offset(n, k + k_head, in_y, in_x)]
+                          * weight_data[this->blobs_[0]->offset(o + o_head, k, p, q)];
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  
+    //
+    // Add the bias
+    //
+    if (this->bias_term()) {
+      for (int n = 0; n < top[i]->num(); n++) {
+        for (int o = 0; o < top[i]->channels_; o++) {
+          for (int y = 0; y < top[i]->height(); y++) {
+            for (int x = 0; x < top[i]->width(); x++) {
+              top_data[top[i]->offset(n, o, y, x)] += bias_data[o];
+            }
+          }
+        }
       }
     }
   }
