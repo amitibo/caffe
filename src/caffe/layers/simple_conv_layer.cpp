@@ -18,45 +18,23 @@ void SimpleConvolutionLayer<Dtype>::compute_output_shape() {
 }
 
 template <typename Dtype>
-void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-  //std::cout << "Getting weight_data\n";
+void SimpleConvolutionLayer<Dtype>::Forward_cpu(
+  const vector<Blob<Dtype>*>& bottom,
+  const vector<Blob<Dtype>*>& top
+  ) {
+
   const Dtype* weight_data = this->blobs_[0]->cpu_data();
 
-  //
-  // Apply the weights
-  //
-  //std::cout << "num_: " << this->num_ << "\n";
-  //std::cout << "num_output_: " << this->num_output_ << "\n";
-  //std::cout << "height_: " << this->height_ << "\n";
-  //std::cout << "width_: " << this->width_ << "\n";
-  //std::cout << "height_out_: " << this->height_out_ << "\n";
-  //std::cout << "width_out_: " << this->width_out_ << "\n";
-  //std::cout << "channels_: " << this->channels_ << "\n";
-  //std::cout << "group_: " << this->group_ << "\n";
-  //std::cout << "kernel_h_" << this->kernel_h_ << "\n";
-  //std::cout << "kernel_w_" << this->kernel_w_ << "\n";
-  //std::cout << "stride_h_" << this->stride_h_ << "\n";
-  //std::cout << "stride_w_" << this->stride_w_ << "\n";
-
-  this->num_output_ << this->height_out_ << this->width_out_ << this->group_ ;
-  int top_size = this->num_ * this->num_output_ * this->height_out_ * this->width_out_;
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
 
-    LOG(INFO) << "Clearing data: " << i;
-
     //
     // Clear the top
     //
-    for (int ind = 0; ind < top_size; ++ind) {
-      top_data[ind]=0;
-    }
+    caffe_set(top[i]->count(), Dtype(0), top_data);
 
-    LOG(INFO) << "Applying weights to data: " << i;
-    //std::cout << "Applying weights to data\n";
-
+    LOG(DEBUG) << "Applying weights to data: " << i;
     for (int n = 0; n < this->num_; n++) {
       int o_g = this->num_output_ / this->group_;
       int k_g = this->channels_ / this->group_;
@@ -90,17 +68,15 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
     // Add the bias
     //
     if (this->bias_term_) {
-      //std::cout << "Getting bias data\n";
       const Dtype* bias_data = this->blobs_[1]->cpu_data();
       
-      LOG(INFO) << "Applying bias to data: " << i;
-      //std::cout << "Applyting bias to data\n";
-
+      LOG(DEBUG) << "Applying bias to data: " << i;
       for (int n = 0; n < this->num_; n++) {
         for (int o = 0; o < this->num_output_; o++) {
           for (int y = 0; y < this->height_out_; y++) {
             for (int x = 0; x < this->width_out_; x++) {
-              top_data[top[i]->offset(n, o, y, x)] += bias_data[o];
+              top_data[top[i]->offset(n, o, y, x)] +=
+                bias_data[o];
             }
           }
         }
@@ -110,8 +86,11 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
 }
 
 template <typename Dtype>
-void SimpleConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SimpleConvolutionLayer<Dtype>::Backward_cpu(
+  const vector<Blob<Dtype>*>& top,
+  const vector<bool>& propagate_down,
+  const vector<Blob<Dtype>*>& bottom
+  ) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
   if (this->param_propagate_down_[0]) {
@@ -121,6 +100,11 @@ void SimpleConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top
     caffe_set(this->blobs_[1]->count(), Dtype(0),
         this->blobs_[1]->mutable_cpu_diff());
   }
+  
+  
+  
+  
+  
   for (int i = 0; i < top.size(); ++i) {
     const Dtype* top_diff = top[i]->cpu_diff();
     const Dtype* bottom_data = bottom[i]->cpu_data();
