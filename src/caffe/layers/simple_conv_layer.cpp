@@ -101,10 +101,6 @@ void SimpleConvolutionLayer<Dtype>::Backward_cpu(
         this->blobs_[1]->mutable_cpu_diff());
   }
   
-  
-  
-  
-  
   for (int i = 0; i < top.size(); ++i) {
     const Dtype* top_diff = top[i]->cpu_diff();
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -112,9 +108,19 @@ void SimpleConvolutionLayer<Dtype>::Backward_cpu(
     // Bias gradient, if necessary.
     if (this->bias_term_ && this->param_propagate_down_[1]) {
       Dtype* bias_diff = this->blobs_[1]->mutable_cpu_diff();
-      for (int n = 0; n < this->num_; ++n) {
-        this->backward_cpu_bias(bias_diff, top_diff + top[i]->offset(n));
+      
+      DLOG(INFO) << "Applying gradient bias to data: " << i;
+      for (int n = 0; n < this->num_; n++) {
+        for (int o = 0; o < this->num_output_; o++) {
+          for (int y = 0; y < this->height_out_; y++) {
+            for (int x = 0; x < this->width_out_; x++) {
+              bias_diff[o] +=
+                top_diff[top[i]->offset(n, o, y, x)];
+            }
+          }
+        }
       }
+
     }
     if (this->param_propagate_down_[0] || propagate_down[i]) {
       for (int n = 0; n < this->num_; ++n) {
