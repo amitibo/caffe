@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 
 #include "caffe/filler.hpp"
 #include "caffe/layer.hpp"
@@ -19,12 +20,26 @@ void SimpleConvolutionLayer<Dtype>::compute_output_shape() {
 template <typename Dtype>
 void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+  //std::cout << "Getting weight_data\n";
   const Dtype* weight_data = this->blobs_[0]->cpu_data();
-  const Dtype* bias_data = this->blobs_[1]->cpu_data();
 
   //
   // Apply the weights
   //
+  //std::cout << "num_: " << this->num_ << "\n";
+  //std::cout << "num_output_: " << this->num_output_ << "\n";
+  //std::cout << "height_: " << this->height_ << "\n";
+  //std::cout << "width_: " << this->width_ << "\n";
+  //std::cout << "height_out_: " << this->height_out_ << "\n";
+  //std::cout << "width_out_: " << this->width_out_ << "\n";
+  //std::cout << "channels_: " << this->channels_ << "\n";
+  //std::cout << "group_: " << this->group_ << "\n";
+  //std::cout << "kernel_h_" << this->kernel_h_ << "\n";
+  //std::cout << "kernel_w_" << this->kernel_w_ << "\n";
+  //std::cout << "stride_h_" << this->stride_h_ << "\n";
+  //std::cout << "stride_w_" << this->stride_w_ << "\n";
+
+  this->num_output_ << this->height_out_ << this->width_out_ << this->group_ ;
   int top_size = this->num_ * this->num_output_ * this->height_out_ * this->width_out_;
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -40,6 +55,7 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
     }
 
     LOG(INFO) << "Applying weights to data: " << i;
+    //std::cout << "Applying weights to data\n";
 
     for (int n = 0; n < this->num_; n++) {
       int o_g = this->num_output_ / this->group_;
@@ -74,7 +90,11 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
     // Add the bias
     //
     if (this->bias_term_) {
+      //std::cout << "Getting bias data\n";
+      const Dtype* bias_data = this->blobs_[1]->cpu_data();
+      
       LOG(INFO) << "Applying bias to data: " << i;
+      //std::cout << "Applyting bias to data\n";
 
       for (int n = 0; n < this->num_; n++) {
         for (int o = 0; o < this->num_output_; o++) {
