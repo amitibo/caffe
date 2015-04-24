@@ -34,7 +34,7 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(
     //
     caffe_set(top[i]->count(), Dtype(0), top_data);
 
-    LOG(DEBUG) << "Applying weights to data: " << i;
+    DLOG(INFO) << "Applying weights to data: " << i;
     for (int n = 0; n < this->num_; n++) {
       int o_g = this->num_output_ / this->group_;
       int k_g = this->channels_ / this->group_;
@@ -70,7 +70,7 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(
     if (this->bias_term_) {
       const Dtype* bias_data = this->blobs_[1]->cpu_data();
       
-      LOG(DEBUG) << "Applying bias to data: " << i;
+      DLOG(INFO) << "Applying bias to data: " << i;
       for (int n = 0; n < this->num_; n++) {
         for (int o = 0; o < this->num_output_; o++) {
           for (int y = 0; y < this->height_out_; y++) {
