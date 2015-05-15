@@ -9,6 +9,14 @@
 namespace caffe {
 
 template <typename Dtype>
+  __global__ void add_scalar_kernel(const int n, int o, const Dtype* alpha, Dtype* y) {
+      CUDA_KERNEL_LOOP(index, n) {
+            y[index] += alpha[o];
+              }
+  }
+
+
+template <typename Dtype>
 void SimpleConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const Dtype* weight = this->blobs_[0]->gpu_data();
@@ -20,7 +28,11 @@ void SimpleConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bott
           top_data + top[i]->offset(n));
       if (this->bias_term_) {
         const Dtype* bias = this->blobs_[1]->gpu_data();
-        this->forward_gpu_bias(top_data + top[i]->offset(n), bias);
+        for (int o = 0; o < this->num_output_; o++) {
+          int N = this->width_out_ * this->height_out_;
+          add_scalar_kernel<Dtype><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+                    N, o, bias, top_data + top[i]->offset(n, o));
+        }
       }
     }
   }
