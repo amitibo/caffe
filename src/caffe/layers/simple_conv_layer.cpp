@@ -35,6 +35,9 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(
     caffe_set(top[i]->count(), Dtype(0), top_data);
 
     DLOG(INFO) << "Applying weights to data: " << i;
+    int top_index=0;
+    int bottom_index=0;
+    int weight_index=0;
     for (int n = 0; n < this->num_; n++) {
       int o_g = this->num_output_ / this->group_;
       int k_g = this->channels_ / this->group_;
@@ -51,9 +54,12 @@ void SimpleConvolutionLayer<Dtype>::Forward_cpu(
                     int in_x = x * this->stride_w_ - this->pad_w_ + q;
                     if (in_y >= 0 && in_y < this->height_
                       && in_x >= 0 && in_x < this->width_) {
-                      top_data[top[i]->offset(n, o + o_head, y, x)] +=
-                          bottom_data[bottom[i]->offset(n, k + k_head, in_y, in_x)]
-                          * weight_data[this->blobs_[0]->offset(o + o_head, k, p, q)];
+                      top_index = ((n*top[i]->shape(1) + (o + o_head))*top[i]->shape(2) + y)*top[i]->shape(3);
+                      bottom_index = ((n*bottom[i]->shape(1) + (k + k_head))*bottom[i]->shape(2) + in_y)*bottom[i]->shape(3);
+                      weight_index = (((o+o_head)*this->blobs_[0]->shape(1) + k)*this->blobs_[0]->shape(2) + p)*this->blobs_[0]->shape(3);
+                      top_data[top_index + x] +=
+                          bottom_data[bottom_index + in_x]
+                          * weight_data[weight_index + q];
                     }
                   }
                 }
